@@ -2,7 +2,7 @@ import torch
 import einops
 import torch.nn as nn
 import numpy as np
-import pytorch_lightning as pl
+#import pytorch_lightning as pl
 from torch.optim.lr_scheduler import LambdaLR
 from einops import rearrange, repeat
 from functools import partial
@@ -20,17 +20,17 @@ def disabled_train(self, mode=True):
     return self
 
 
-class DiffusionWrapper(pl.LightningModule):
+class DiffusionWrapper(torch.nn.Module):
     def __init__(self, unet_config):
         super().__init__()
-        self.diffusion_model = instantiate_from_config(unet_config)
+        self.diffusion_model = unet_config #instantiate_from_config(unet_config)
 
     def forward(self, x, timesteps=None, context=None, control=None):
         out = self.diffusion_model(x, timesteps, context, control)
         return out
 
 
-class DDPM(pl.LightningModule):
+class DDPM(torch.nn.Module):
     def __init__(self,
                  unet_config,
                  linear_start=1e-4,                 # 0.00085
@@ -76,6 +76,10 @@ class DDPM(pl.LightningModule):
         self.loss_type = loss_type
         self.learn_logvar = learn_logvar
         self.logvar = torch.full(fill_value=logvar_init, size=(self.num_timesteps,))
+
+    @property
+    def device(self):
+        return next(self.parameters()).device
 
     def register_schedule(self, 
                           beta_schedule="linear", 

@@ -2,7 +2,8 @@ import os
 import torch
 import argparse
 import torchvision
-import pytorch_lightning
+#import pytorch_lightning
+from torch.utils.data import DataLoader
 import numpy as np
 
 from PIL import Image
@@ -10,10 +11,14 @@ from torch import autocast
 from einops import rearrange
 from functools import partial
 from omegaconf import OmegaConf
-from pytorch_lightning import seed_everything
+#from pytorch_lightning import seed_everything
 
 from ldm.util import instantiate_from_config
 from ldm.models.diffusion.ddim import DDIMSampler
+
+#from torch.serialization import add_safe_globals
+#from pytorch_lightning.callbacks import ModelCheckpoint
+#add_safe_globals([ModelCheckpoint])
 
 def un_norm(x):
     return (x+1.0)/2.0
@@ -24,27 +29,31 @@ def un_norm_clip(x):
     x[2,:,:] = x[2,:,:] * 0.27577711 + 0.40821073
     return x
 
-class DataModuleFromConfig(pytorch_lightning.LightningDataModule):
-    def __init__(self, 
-                 batch_size,                        # 1
-                 test=None,                         # {...}
-                 wrap=False,                        # False
-                 shuffle=False,             
-                 shuffle_test_loader=False,
-                 use_worker_init_fn=False):
-        super().__init__()
+class DataModuleFromConfig:
+    def __init__(
+        self,
+        batch_size,
+        test=None,
+        wrap=False,
+        shuffle=False,
+        shuffle_test_loader=False,
+        use_worker_init_fn=False,
+    ):
         self.batch_size = batch_size
         self.num_workers = batch_size * 2
         self.use_worker_init_fn = use_worker_init_fn
         self.wrap = wrap
+        self.shuffle = shuffle
+        self.shuffle_test_loader = shuffle_test_loader
+
         self.datasets = instantiate_from_config(test)
-        self.dataloader = torch.utils.data.DataLoader(self.datasets, 
-                                                      batch_size=self.batch_size,
-                                                      num_workers=self.num_workers,
-                                                      shuffle=shuffle,
-                                                      worker_init_fn=None)
-
-
+        self.dataloader = DataLoader(
+            self.datasets,
+            batch_size=self.batch_size,
+            num_workers=self.num_workers,
+            shuffle=self.shuffle,
+            worker_init_fn=self._worker_init_fn if self.use_worker_init_fn else None,
+        )
 
 if __name__ == "__main__":
     # =============================================================
@@ -60,7 +69,7 @@ if __name__ == "__main__":
     # =============================================================
     # 设置 seed
     # =============================================================
-    seed_everything(opt.seed)
+    #seed_everything(opt.seed)
 
     # =============================================================
     # 初始化 config
@@ -76,6 +85,7 @@ if __name__ == "__main__":
     # =============================================================
     # 加载 model
     # =============================================================
+    
     model = instantiate_from_config(config.model)
     model.load_state_dict(torch.load(opt.ckpt, map_location="cpu")["state_dict"], strict=False)
     model.cuda()

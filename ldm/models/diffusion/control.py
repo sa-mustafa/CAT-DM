@@ -232,7 +232,7 @@ class ControlLDM(DDPM):
                  *args, **kwargs):
         self.num_timesteps_cond = 1
         super().__init__(*args, **kwargs)                                       # self.model 和 self.register_buffer
-        self.control_model = instantiate_from_config(control_stage_config)      # self.control_model
+        self.control_model = control_stage_config                               # self.control_model
         self.instantiate_first_stage(first_stage_config)                        # self.first_stage_model 调用 AutoencoderKL
         self.instantiate_cond_stage(cond_stage_config)                          # self.cond_stage_model 调用 FrozenCLIPImageEmbedder
         self.proj_out=nn.Linear(1024, 768)                                      # 全连接层
@@ -249,7 +249,7 @@ class ControlLDM(DDPM):
 
     # AutoencoderKL 不训练
     def instantiate_first_stage(self, config):
-        model = instantiate_from_config(config)
+        model = config #instantiate_from_config(config)
         self.first_stage_model = model.eval()
         self.first_stage_model.train = disabled_train
         for param in self.first_stage_model.parameters():
@@ -257,7 +257,7 @@ class ControlLDM(DDPM):
 
     # FrozenCLIPImageEmbedder 不训练
     def instantiate_cond_stage(self, config):
-        model = instantiate_from_config(config)
+        model = config #instantiate_from_config(config)
         self.cond_stage_model = model.eval()
         self.cond_stage_model.train = disabled_train
         for param in self.cond_stage_model.parameters():
