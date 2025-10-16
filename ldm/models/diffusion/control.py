@@ -240,7 +240,7 @@ class ControlLDM(DDPM):
         self.learnable_vector = nn.Parameter(torch.randn((1,1,768)), requires_grad=False)
         self.trainable_vector = nn.Parameter(torch.randn((1,1,768)), requires_grad=True)
 
-        self.dinov2_vitl14 = torch.hub.load('facebookresearch/dinov2', 'dinov2_vitl14')
+        self.dinov2_vitl14 = torch.hub.load('facebookresearch/dinov2:b48308a', 'dinov2_vitl14', skip_validation=True,)
         self.dinov2_vitl14.eval()
         self.dinov2_vitl14.train = disabled_train
         for param in self.dinov2_vitl14.parameters():
@@ -250,7 +250,8 @@ class ControlLDM(DDPM):
     # AutoencoderKL 不训练
     def instantiate_first_stage(self, config):
         model = config #instantiate_from_config(config)
-        self.first_stage_model = model.eval()
+        self.first_stage_model = model
+        self.first_stage_model.eval()
         self.first_stage_model.train = disabled_train
         for param in self.first_stage_model.parameters():
             param.requires_grad = False
@@ -258,7 +259,8 @@ class ControlLDM(DDPM):
     # FrozenCLIPImageEmbedder 不训练
     def instantiate_cond_stage(self, config):
         model = config #instantiate_from_config(config)
-        self.cond_stage_model = model.eval()
+        self.cond_stage_model = model
+        self.cond_stage_model.eval()
         self.cond_stage_model.train = disabled_train
         for param in self.cond_stage_model.parameters():
             param.requires_grad = False
