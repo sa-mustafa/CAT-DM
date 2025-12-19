@@ -249,11 +249,12 @@ class AutoMasker:
         return self.schp_processor_atr(image_or_path)
         
     def preprocess_image(self, image_or_path):
-        return {
-            'densepose': self.densepose_processor(image_or_path, resize=1024),
-            'schp_atr': self.schp_processor_atr(image_or_path),
-            'schp_lip': self.schp_processor_lip(image_or_path)
-        }
+        with torch.no_grad():
+            return {
+                'densepose': self.densepose_processor(image_or_path, resize=1024),
+                'schp_atr': self.schp_processor_atr(image_or_path),
+                'schp_lip': self.schp_processor_lip(image_or_path)
+            }
     
     @staticmethod
     def cloth_agnostic_mask(
